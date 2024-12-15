@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Player - BridgeSense</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #4CAF50;
+            text-transform: uppercase;
+        }
+
+        select {
+            font-size: 16px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px solid #4CAF50;
+            background-color: #fff;
+            margin-bottom: 20px;
+            width: 300px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover {
+            border-color: #45a049;
+        }
+
+        select:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(72, 161, 72, 0.3);
+        }
+
+        /* Video container styling */
+        #videoContainer {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            max-width: 80%;
+            width: 100%;
+        }
+
+        video {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Buttons for recording functionality */
+        .action-btns {
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Alert styling */
+        .alert {
+            display: none;
+            background-color: #f44336;
+            color: white;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        /* Webcam container */
+        #webcamContainer {
+            margin-top: 30px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            max-width: 80%;
+            width: 100%;
+        }
+
+        video#webcam {
+            width: 100%;
+            max-width: 800px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>BridgeSense</h1>
+
+    <!-- Dropdown to select video -->
+    <select id="videoSelector">
+        <option value="">--Select a Video--</option>
+        {% for video in videos %}
+            <option value="{{ video }}">{{ video }}</option>
+        {% endfor %}
+    </select>
+
+    <div id="videoContainer">
+        <video id="videoPlayer" controls>
+            <source src="" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <!-- Buttons for webcam recording -->
+    <div class="action-btns">
+        <button id="startRecordingBtn">Start Recording</button>
+        <button id="stopRecordingBtn" disabled>Stop Recording</button>
+    </div>
+
+    <!-- Webcam container -->
+    <div id="webcamContainer">
+        <video id="webcam" autoplay></video>
+    </div>
+
+    <!-- Error Message Alert -->
+    <div id="alertMessage" class="alert">Please select a video.</div>
+
+    <script>
+        // Get elements
+        const videoSelector = document.getElementById('videoSelector');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const alertMessage = document.getElementById('alertMessage');
+        const startRecordingBtn = document.getElementById('startRecordingBtn');
+        const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+        const webcamContainer = document.getElementById('webcamContainer');
+        const webcam = document.getElementById('webcam');
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Handle video selection
+        videoSelector.addEventListener('change', function() {
+            const selectedVideo = this.value;
+            if (selectedVideo) {
+                videoPlayer.src = `/assets/${selectedVideo}`;  // Pointing to Flask's /assets route
+                videoPlayer.load();  // Load the new video source
+                videoPlayer.play();  // Start playing the video
+                alertMessage.classList.remove('show');  // Hide the alert
+            } else {
+                alertMessage.classList.add('show');  // Show alert message if no video selected
+            }
+        });
+
+        // Start webcam recording
+        startRecordingBtn.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = stream;
+                webcamContainer.style.display = 'block';  // Show webcam video
+                mediaRecorder = new MediaRecorder(stream);
+
+                // When data is available from the recorder
+                mediaRecorder.ondataavailable = event => {
+                    recordedChunks.push(event.data);
+                };
+
+                // When recording is stopped
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const filename = `recording_${videoSelector.value}.webm`;
+
+                    // Save the recording (client-side demo)
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                    recordedChunks = [];
+                };
+
+                mediaRecorder.start();
+                startRecordingBtn.disabled = true;
+                stopRecordingBtn.disabled = false;
+            } catch (err) {
+                console.error('Error accessing webcam: ', err);
+                alertMessage.textContent = 'Error accessing webcam';
+                alertMessage.classList.add('show');
+            }
+        });
+
+        // Stop webcam recording
+        stopRecordingBtn.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            startRecordingBtn.disabled = false;
+            stopRecordingBtn.disabled = true;
+            webcam.srcObject.getTracks().forEach(track => track.stop());
+            webcamContainer.style.display = 'none';
+        });
+    </script>
+
+</body>
+</html>
