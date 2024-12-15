@@ -86,6 +86,9 @@ BridgeSense is a comprehensive platform designed to bridge the communication gap
 
 `python app.py`
 
+### Run the Interpreter 
+```python flk.py```
+
 ## Contributing
 
 We welcome contributions from the community. Please fork the repository and submit a pull request.
