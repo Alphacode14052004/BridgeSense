@@ -99,4 +99,4 @@ This project is licensed under the [Apache License 2.0](LICENSE) - see the LICEN
 
 ## Contact
 
-For inquiries or support, please contact [Venkataraman](jimvenkat999@gmail.com) or [Nawin Viswajith](nawinviswajith@gmail.com).
+For inquiries or support, please contact [Venkataraman](https://www.linkedin.com/in/p-venkataraman/) or [Nawin Viswajith](https://www.linkedin.com/in/nawinviswajith/).
